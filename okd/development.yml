@@ -1,0 +1,32 @@
+#### ConfigMap for  Development ####
+apiVersion: v1
+kind: Template
+objects:
+  - kind: ConfigMap
+    apiVersion: v1
+    metadata:
+      name: wactherfile-config-map
+    data:
+      LOGGING_LEVEL: DEBUG
+      ORACLE_HOST: localhost
+      ORACLE_SCHEMA: REKO
+      SQL_DIALECT: oracle
+      SQL_DRIVER: cx_oracle
+      ORACLE_USER_NAME: user
+      ORACLE_SERVICE_NAME: server_oracle
+      ORACLE_PORT: '5321'
+      SMB_SERVER_NAME: server_smb
+      SMB_USER_NAME: srvcKofaxdes
+      SMB_WATCH_DIRECTORY: carpeta_compartida
+      DIRECTORY_LIST: lista_in
+      WAIT_TIME_SECONDS_JOB: '1'
+      NEW_FILE_INTERVAL_TIME: '2'
+      NOT_TESTING: 'True'
+  - kind: Secret
+    apiVersion: v1
+    metadata:
+      name: wactherfile-secret
+    type: Opaque
+    stringData:
+      PASSWORD_ORACLE: adfasd222asdfa
+      SMB_PASSWORD: asdfa1111asdf

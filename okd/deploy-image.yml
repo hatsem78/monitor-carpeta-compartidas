@@ -1,0 +1,278 @@
+apiVersion: v1
+kind: Template
+parameters:
+  - name: APPLICATION_NAME
+    displayName: Application Name
+    description: The name for the application.
+  - name: APPLICATION_LABEL
+    displayName: Application Label
+    description: The label for the application common between other resources.
+  - name: READINESS_PROBE_PATH
+    displayName: Readiness Probe
+    description: Readiness Health Probe, include the base path of the server if necessary.
+  - name: LIVENESS_PROBE_PATH
+    displayName: Liveness Health Probe
+    description: Liveness Health Probe, include the base path of the server if necessary.
+  - name: ENVIRONMENT
+    displayName: Environment
+    description: Environment where the project is currently deployed.
+  - name: PROGRAM_ID
+    displayName: Program ID
+    description: The ID of the Program this app belongs to.
+  - name: REPLICAS
+    displayName: Replicas
+    description: Number of Replicas that the app will deploy at once.
+  - name: CMDB
+    displayName: CMDB Code
+    description: Unique CMDB code for the application.
+  - name: NAME_CONFIGMAP
+    displayName: NAME_CONFIGMAP
+    description: NAME_CONFIGMAP
+  - name: NAME_SECRET
+    displayName: NAME_SECRET
+    description: NAME_SECRET
+  - name: NAME_LOGGING_LEVEL
+    displayName: NAME_LOGGING_LEVEL
+    description: NAME_LOGGING_LEVEL
+#########################################
+################ OBJECTS ################
+#########################################
+objects:
+
+  #########################################
+  ########### DEPLOYMENT CONFIG ###########
+  #########################################
+  - kind: DeploymentConfig
+    apiVersion: v1
+    metadata:
+      name: ${APPLICATION_NAME}
+      labels:
+        app: ${APPLICATION_LABEL}
+        env: ${ENVIRONMENT}
+        programid: ${PROGRAM_ID}
+        deploymentConfig: ${APPLICATION_NAME}
+        cmdb: ${CMDB}
+    spec:
+      strategy:
+        type: Recreate
+      replicas: ${{REPLICAS}}
+      selector:
+        deploymentConfig: ${APPLICATION_NAME}
+        app: ${APPLICATION_NAME}
+      template:
+        metadata:
+          name: ${APPLICATION_NAME}
+          labels:
+            app: ${APPLICATION_LABEL}
+            env: ${ENVIRONMENT}
+            programid: ${PROGRAM_ID}
+            deploymentConfig: ${APPLICATION_NAME}
+            cmdb: ${CMDB}
+          annotations:
+            alpha.image.policy.openshift.io/resolve-names: '*'
+        spec:
+          containers:
+            - name: ${APPLICATION_NAME}
+              image: ${APPLICATION_NAME}:default
+              env:
+                - name: LOGGING_LEVEL
+                  valueFrom:
+                    configMapKeyRef:
+                      name: ${NAME_CONFIGMAP}
+                      key: LOGGING_LEVEL
+                - name: ORACLE_HOST
+                  valueFrom:
+                    configMapKeyRef:
+                      name: ${NAME_CONFIGMAP}
+                      key: ORACLE_HOST
+                - name: ORACLE_SCHEMA
+                  valueFrom:
+                    configMapKeyRef:
+                      name: ${NAME_CONFIGMAP}
+                      key: ORACLE_SCHEMA
+                - name: SQL_DIALECT
+                  valueFrom:
+                    configMapKeyRef:
+                      name: ${NAME_CONFIGMAP}
+                      key: SQL_DIALECT
+                - name: SQL_DRIVER
+                  valueFrom:
+                    configMapKeyRef:
+                      name: ${NAME_CONFIGMAP}
+                      key: SQL_DRIVER
+                - name: ORACLE_USER_NAME
+                  valueFrom:
+                    configMapKeyRef:
+                      name: ${NAME_CONFIGMAP}
+                      key: ORACLE_USER_NAME
+                - name: ORACLE_SERVICE_NAME
+                  valueFrom:
+                    configMapKeyRef:
+                      name: ${NAME_CONFIGMAP}
+                      key: ORACLE_SERVICE_NAME
+                - name: ORACLE_PORT
+                  valueFrom:
+                    configMapKeyRef:
+                      name: ${NAME_CONFIGMAP}
+                      key: ORACLE_PORT
+                - name: SMB_SERVER_NAME
+                  valueFrom:
+                    configMapKeyRef:
+                      name: ${NAME_CONFIGMAP}
+                      key: SMB_SERVER_NAME
+                - name: SMB_USER_NAME
+                  valueFrom:
+                    configMapKeyRef:
+                      name: ${NAME_CONFIGMAP}
+                      key: SMB_USER_NAME
+                - name: SMB_WATCH_DIRECTORY
+                  valueFrom:
+                    configMapKeyRef:
+                      name: ${NAME_CONFIGMAP}
+                      key: SMB_WATCH_DIRECTORY
+                - name: DIRECTORY_LIST
+                  valueFrom:
+                    configMapKeyRef:
+                      name: ${NAME_CONFIGMAP}
+                      key: DIRECTORY_LIST
+                - name: WAIT_TIME_SECONDS_JOB
+                  valueFrom:
+                    configMapKeyRef:
+                      name: ${NAME_CONFIGMAP}
+                      key: WAIT_TIME_SECONDS_JOB
+                - name: NEW_FILE_INTERVAL_TIME
+                  valueFrom:
+                    configMapKeyRef:
+                      name: ${NAME_CONFIGMAP}
+                      key: NEW_FILE_INTERVAL_TIME
+                - name: NOT_TESTING
+                  valueFrom:
+                    configMapKeyRef:
+                      name: ${NAME_CONFIGMAP}
+                      key: NOT_TESTING
+                - name: PASSWORD_ORACLE
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${NAME_SECRET}
+                      key: PASSWORD_ORACLE
+                - name: SMB_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${NAME_SECRET}
+                      key: SMB_PASSWORD
+              ports:
+                - name: http
+                  containerPort: 8080
+                  protocol: TCP
+                - name: https
+                  containerPort: 8443
+                  protocol: TCP
+              terminationMessagePath: /dev/termination-log
+              terminationGracePeriodSeconds: 75
+#              readinessProbe:
+#                failureThreshold: 3
+#                httpGet:
+#                  path: ${READINESS_PROBE_PATH}
+#                  port: 8080
+#                  scheme: HTTP
+#                initialDelaySeconds: 30
+#                periodSeconds: 10
+#                successThreshold: 1
+#                timeoutSeconds: 1
+#              livenessProbe:
+#                failureThreshold: 3
+#                httpGet:
+#                  path: ${LIVENESS_PROBE_PATH}
+#                  port: 8080
+#                  scheme: HTTP
+#                initialDelaySeconds: 15
+#                periodSeconds: 10
+#                successThreshold: 1
+#                timeoutSeconds: 1
+              resources:
+                limits:
+                  cpu: 800m
+                  memory: 1Gi
+              dnsPolicy: ClusterFirst
+              restartPolicy: Always
+
+  #########################################
+  ################ SERVICE ################
+  #########################################
+  - kind: Service
+    apiVersion: v1
+    metadata:
+      name: ${APPLICATION_NAME}
+      labels:
+        app: ${APPLICATION_LABEL}
+        env: ${ENVIRONMENT}
+        programid: ${PROGRAM_ID}
+        deploymentConfig: ${APPLICATION_NAME}
+        cmdb: ${CMDB}
+      annotations:
+        description: The application's http port.
+    spec:
+      ports:
+        - port: 8080
+          targetPort: 8080
+      selector:
+        app: ${APPLICATION_NAME}
+        deploymentConfig: ${APPLICATION_NAME}
+      sessionAffinity: None
+      type: ClusterIP
+
+  #########################################
+  ################# ROUTE #################
+  #########################################
+  - kind: Route
+    apiVersion: v1
+    id: "${APPLICATION_NAME}-http"
+    metadata:
+      name: ${APPLICATION_NAME}
+      labels:
+        app: ${APPLICATION_LABEL}
+        env: ${ENVIRONMENT}
+        programid: ${PROGRAM_ID}
+        deploymentConfig: ${APPLICATION_NAME}
+        cmdb: ${CMDB}
+      annotations:
+        description: Route for application's http service.
+        haproxy.router.openshift.io/timeout: 300s
+    spec:
+      port:
+        targetPort: 8080
+      tls:
+        insecureEdgeTerminationPolicy: Redirect
+        termination: edge
+      to:
+        name: ${APPLICATION_NAME}
+        kind: Service
+        weight: 100
+      wildcardPolicy: None
+#########################################
+################# HPA #################
+#########################################
+  - apiVersion: autoscaling/v2beta2
+    kind: HorizontalPodAutoscaler
+    metadata:
+      name: autoscale
+    spec:
+      scaleTargetRef:
+        apiVersion: v1
+        kind: DeploymentConfig
+        name: ${APPLICATION_NAME}
+      minReplicas: 1
+      maxReplicas: 1
+      metrics:
+      - type: Resource
+        resource:
+          name: cpu
+          target:
+            type: Utilization
+            averageValue: 500m
+      - type: Resource
+        resource:
+          name: memory
+          target:
+            type: Utilization
+            averageValue: 512Mi
