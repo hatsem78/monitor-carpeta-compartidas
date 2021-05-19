@@ -1,0 +1,14 @@
+python-dotenv
+python-multipart
+opencv-python-headless
+pytest
+pytest_cov
+sqlalchemy
+cx_Oracle
+pydantic
+tenacity
+pysmb
+flake8
+mock
+requests
+testfixtures
